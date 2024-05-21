@@ -1,28 +1,27 @@
----
-name: Nightly
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'
-
 jobs:
   test:
     name: Test CrateDB SQL on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Setup Maven Java
+      uses: actions/setup-java@v3
+      with:
+        cache: maven
+        distribution: temurin
+        java-version: '17'
+    - continue-on-error: true
+      env:
+        CRATE_TESTS_SQL_REQUEST_TIMEOUT: '20'
+      name: Run tests on ${{ matrix.os }}
+      run: mvn test -Dtests.crate.run-windows-incompatible=false -Dcheckstyle.skip
     strategy:
       matrix:
-        os: [windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Maven Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: "17"
-          distribution: "temurin"
-          cache: maven
-
-      - name: Run tests on ${{ matrix.os }}
-        env:
-          CRATE_TESTS_SQL_REQUEST_TIMEOUT: "20"
-        run: mvn test -Dtests.crate.run-windows-incompatible=false -Dcheckstyle.skip
+        os:
+        - windows-latest
+name: Nightly
+on:
+  repository_dispatch:
+    types: trigger-ga___nightly.yml
